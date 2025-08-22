@@ -42,6 +42,27 @@ def predict():
     })
 
 
+@app.route('/ratings', methods=['GET'])
+def ratings():
+    handle = request.args.get('handle')
+    if not handle:
+        return jsonify({"error": "Missing handle"}), 400
+
+    result = fetch_codeforces_ratings(handle)
+    if not result:
+        return jsonify({"error": "Invalid handle or no rating history"}), 404
+
+    timestamps, ratings = result
+    indices = list(range(1, len(ratings) + 1))
+
+    return jsonify({
+        "handle": handle,
+        "indices": indices,
+        "timestamps": [int(t) for t in timestamps.tolist()],
+        "ratings": [int(r) for r in ratings.tolist()],
+    })
+
+
 @app.route('/predict_price', methods=['POST'])
 def predict_price():
     data = request.get_json()
