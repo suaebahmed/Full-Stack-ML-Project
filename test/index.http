@@ -1,0 +1,27 @@
+### VS Code REST Client tests for the Flask backend
+
+@baseUrl = http://localhost:5000
+
+GET {{baseUrl}}/
+
+### Predict Codeforces rank reach date (adjust handle/target as needed)
+GET {{baseUrl}}/predict?handle=Nisikto&target=1900
+
+### Predict house price
+POST {{baseUrl}}/predict_price
+Content-Type: application/json
+
+{
+	"area": 2500,
+	"bedrooms": 3,
+	"bathrooms": 2,
+	"stories": 2,
+	"parking": 1,
+	"benefits": {
+		"air_conditioning": true,
+		"hot_water_heating": false,
+		"basement": true,
+		"prefarea": true
+	}
+}
+

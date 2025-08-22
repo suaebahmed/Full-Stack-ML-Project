@@ -1,0 +1,7 @@
+/* Enable Tailwind v4 */
+@import "tailwindcss";
+
+/* Optional: app-wide tweaks */
+html, body, #root {
+	height: 100%;
+}
