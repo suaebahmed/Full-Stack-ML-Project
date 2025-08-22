@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import axios from "axios";
 
 type Benefits = {
@@ -18,74 +18,78 @@ type PropertyInfo = {
   benefits: Benefits;
 };
 
+type NumericField = "area" | "bedrooms" | "bathrooms" | "stories" | "parking";
+type PriceResponse = { price: number };
+
+const API_BASE = import.meta.env.VITE_API || "http://127.0.0.1:5000";
+const DEFAULT_FORM: PropertyInfo = {
+  area: 500,
+  bedrooms: 1,
+  bathrooms: 1,
+  stories: 1,
+  parking: 0,
+  benefits: {
+    mainRoad: false,
+    guestRoom: false,
+    basement: false,
+    hotWaterHeating: false,
+    airConditioning: false,
+  },
+};
+
 export default function PredictPrice() {
-  const [isloading, setLoading] = useState<boolean>(false);
-  const [output, setOutput] = useState<boolean>(false);
-  const [formData, setFormData] = useState<PropertyInfo>({
-    area: 500,
-    bedrooms: 1,
-    bathrooms: 1,
-    stories: 1,
-    parking: 0,
-    benefits: {
-      mainRoad: false,
-      guestRoom: false,
-      basement: false,
-      hotWaterHeating: false,
-      airConditioning: false,
-    },
-  });
-  const [Price, setPrice] = useState<number>(0);
+  const [isLoading, setLoading] = useState(false);
+  const [output, setOutput] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [formData, setFormData] = useState<PropertyInfo>(DEFAULT_FORM);
+  const [price, setPrice] = useState(0);
 
-  const handleRangeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleRangeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: Number(value),
-    }));
-  };
+    const key = name as NumericField;
+    setFormData((prev) => ({ ...prev, [key]: Number(value) }));
+  }, []);
 
-  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCheckboxChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, checked } = e.target;
     setFormData((prev) => ({
       ...prev,
-      benefits: {
-        ...prev.benefits,
-        [name]: checked,
-      },
+      benefits: { ...prev.benefits, [name]: checked },
     }));
-  };
+  }, []);
 
-  async function handlePredictprice() {
+  const handlePredictprice = useCallback(async () => {
+    setLoading(true);
+    setOutput(false);
+    setError(null);
     try {
-      setLoading(true);
-      const response = await axios.post(
-        `${import.meta.env.VITE_API}/predict_price`,
+      const { data } = await axios.post<PriceResponse>(
+        `${API_BASE}/predict_price`,
         formData,
-        {
-          headers: { "Content-Type": "application/json" },
-        }
+        { headers: { "Content-Type": "application/json" } }
       );
-      setPrice(response.data.price);
-      setLoading(false);
+      setPrice(data.price);
       setOutput(true);
-    } catch (error) {
-      console.log(error);
+    } catch (e) {
+      console.error(e);
+      setError("Failed to get prediction. Please try again.");
+    } finally {
+      setLoading(false);
     }
-  }
+  }, [formData]);
 
-  const currency = new Intl.NumberFormat(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+  const currency = useMemo(() =>
+    new Intl.NumberFormat(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 2 })
+  , []);
 
-  const RangeField = ({
-    label,
-    name,
-    min,
-    max,
-    value,
-    onChange,
-  }: {
+  const formatMillionUSD = useCallback((value: number) => {
+    const millions = value / 1_000_000;
+    return `${currency.format(millions)}M`;
+  }, [currency]);
+
+  const RangeField = ({ label, name, min, max, value, onChange }: {
     label: string;
-    name: keyof PropertyInfo;
+    name: NumericField;
     min: number;
     max: number;
     value: number;
@@ -98,7 +102,7 @@ export default function PredictPrice() {
       </div>
       <input
         type="range"
-        name={name as string}
+        name={name}
         min={min}
         max={max}
         value={value}
@@ -128,42 +132,50 @@ export default function PredictPrice() {
           <div className="mt-8">
             <p className="font-semibold text-slate-800 mb-3">Benefits</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <label className="inline-flex items-center gap-2 p-2 rounded-lg hover:bg-slate-50">
-                <input type="checkbox" name="mainRoad" checked={formData.benefits.mainRoad} onChange={handleCheckboxChange} className="accent-blue-600" />
-                <span>Main Road</span>
-              </label>
-              <label className="inline-flex items-center gap-2 p-2 rounded-lg hover:bg-slate-50">
-                <input type="checkbox" name="guestRoom" checked={formData.benefits.guestRoom} onChange={handleCheckboxChange} className="accent-blue-600" />
-                <span>Guest Room</span>
-              </label>
-              <label className="inline-flex items-center gap-2 p-2 rounded-lg hover:bg-slate-50">
-                <input type="checkbox" name="basement" checked={formData.benefits.basement} onChange={handleCheckboxChange} className="accent-blue-600" />
-                <span>Basement</span>
-              </label>
-              <label className="inline-flex items-center gap-2 p-2 rounded-lg hover:bg-slate-50">
-                <input type="checkbox" name="hotWaterHeating" checked={formData.benefits.hotWaterHeating} onChange={handleCheckboxChange} className="accent-blue-600" />
-                <span>Hot Water Heating</span>
-              </label>
-              <label className="inline-flex items-center gap-2 p-2 rounded-lg hover:bg-slate-50">
-                <input type="checkbox" name="airConditioning" checked={formData.benefits.airConditioning} onChange={handleCheckboxChange} className="accent-blue-600" />
-                <span>Air Conditioning</span>
-              </label>
+              {(
+                [
+                  { name: "mainRoad", label: "Main Road" },
+                  { name: "guestRoom", label: "Guest Room" },
+                  { name: "basement", label: "Basement" },
+                  { name: "hotWaterHeating", label: "Hot Water Heating" },
+                  { name: "airConditioning", label: "Air Conditioning" },
+                ] as const
+              ).map((b) => (
+                <label key={b.name} className="inline-flex items-center gap-2 p-2 rounded-lg hover:bg-slate-50">
+                  <input
+                    type="checkbox"
+                    name={b.name}
+                    checked={formData.benefits[b.name]}
+                    onChange={handleCheckboxChange}
+                    className="accent-blue-600"
+                  />
+                  <span>{b.label}</span>
+                </label>
+              ))}
             </div>
           </div>
 
           <div className="mt-8">
             <button
               onClick={handlePredictprice}
-              className="w-full h-11 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow hover:opacity-95 active:opacity-90 transition"
+              disabled={isLoading}
+              aria-busy={isLoading}
+              className="w-full h-11 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow hover:opacity-95 active:opacity-90 transition disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {isloading ? "Processing..." : "Predict Price"}
+              {isLoading ? "Processing..." : "Predict Price"}
             </button>
           </div>
+
+          {error && (
+            <div className="mt-4 w-full rounded-lg border border-red-200 bg-red-50 text-red-900 p-3 text-center shadow-sm">
+              {error}
+            </div>
+          )}
 
           {output && (
             <div className="mt-6">
               <div className="w-full rounded-lg border border-blue-200 bg-blue-50 text-blue-900 p-4 text-center font-semibold shadow-sm">
-                Predicted House Price: {currency.format(Price)}
+                Predicted House Price: {formatMillionUSD(price)}
               </div>
             </div>
           )}
