@@ -38,7 +38,7 @@ def predict():
         "handle": handle,
         "current_rating": int(ratings[-1]),
         "target_rating": target_rating,
-        "predicted_date": predicted_date.strftime("%Y-%m-%d"),
+        "predicted_date": predicted_date.strftime("%B %Y"),
     })
 
 
