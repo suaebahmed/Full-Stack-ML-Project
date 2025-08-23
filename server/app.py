@@ -65,31 +65,18 @@ def ratings():
 
 @app.route('/predict_price', methods=['POST'])
 def predict_price():
-    data = request.get_json()
-    print(data)
-    benefits = data.get("benefits", {})
-    score=0
-    for feature, is_enabled in benefits.items():
-        if is_enabled:
-            score+=1
-        else:
-            score+=0
-        print(f"{feature}: {is_enabled}")
-    print(score)
+    data = request.get_json(silent=True) or {}
 
-    house_info={
-                'area': data.get("area"),
-                'bedrooms': data.get("bedrooms"),
-                'bathrooms': data.get("bathrooms"),
-                'stories': data.get("stories"),
-                'parking': data.get("parking"),
-                'amenities_score': score
-            }
-    print(house_info)
-    pr=calculate(house_info)
-    rounded = round(pr, 2)
-    print(rounded)
-    return jsonify({"price":rounded})
+    required = ["area", "bedrooms", "bathrooms", "stories", "parking"]
+    values = {k: float(data[k]) for k in required}
+
+    benefits = data.get("benefits") or {}
+    score = sum(1 for v in benefits.values() if bool(v))
+
+    house_info = {**values, "amenities_score": float(score)}
+
+    price = round(calculate(house_info), 2)
+    return jsonify({"price": price})
 
 
 if __name__ == '__main__':
