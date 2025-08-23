@@ -1,8 +1,8 @@
 from flask import Flask, request, jsonify
-from utils.calculate_price import calculate
+from utils.house_price_model import calculate
 from flask_cors import CORS
 from dotenv import load_dotenv
-from utils.helper import fetch_codeforces_ratings, predict_reach_date
+from utils.codeforces import fetch_codeforces_ratings, predict_reach_date
 import os
 load_dotenv()
 
