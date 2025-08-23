@@ -1,52 +1,17 @@
+# Full-Stack ML Project
 
-## Project Overview: Codeforces Rank Progress Predictor
+A simple full‑stack app with two features:
+- Codeforces Rank Progress Predictor: fetches a user’s rating history and predicts when they may reach a target rating, plus a timeline chart.
+- House Price Predictor: estimates house price from a few inputs and selected amenities.
 
-### 🎯 Goal
-
-Build a **full-stack web application** that predicts **how long it will take a competitive programmer to reach the next Codeforces rank** (e.g., Expert, Candidate Master) based on their **rating history**.
-
-* **Backend (Flask, Python)**
-
-  * Exposes an API endpoint (e.g., `/predict/<handle>`)
-  * Fetches rating history from the **Codeforces API**
-  * Uses a simple **ML model / regression** to estimate rating growth trend
-  * Returns predictions in JSON (e.g., `"Expert": "8 months"`, `"Candidate Master": "2 years"`)
-  * No database — stateless, lightweight API
-
-* **Frontend (React + TypeScript + TailwindCSS)**
-
-  * Single-page app (SPA) for user interaction
-  * Input field for **Codeforces handle**
-  * Calls the Flask API and displays predictions clearly in a **card layout**
-  * Simple, responsive, minimal UI
-
-* **Workflow**
-
-  1. User enters their Codeforces handle in the frontend
-  2. React sends a request to Flask API
-  3. Flask fetches data from Codeforces API → runs prediction → responds with JSON
-  4. React displays predicted times to reach Expert, Candidate Master, etc.
-
-* **Extensions (future)**
-
-  * Use more advanced ML models (time series, curve fitting, etc.)
-  * Add graphs of rating history + forecast
-  * Deploy full-stack app (Flask + React) on cloud
-
-👉 In short: **A predictive full-stack project where Flask handles ML predictions and React/Tailwind provides a clean user interface.**
+## Tech stack
+- Server: Python, Flask, scikit‑learn, requests, Flask‑CORS, python‑dotenv
+- Client: React (Vite + TypeScript), Tailwind CSS, axios, chart.js (via react‑chartjs‑2)
 
 
-## Setting up the Backend Environment
+## Scripts (reference)
+- Server: `python app.py`
+- Client: `npm run dev`, `npm run build`
 
-```bash
-cd server
-
-# create and activate a virtual environment (Windows + bash.exe)
-python -m venv .venv
-source .venv/Scripts/activate
-
-pip install -r requirements.txt
-```
-
-## Run the Flask app
-python app.py
+## License
+MIT (or your preferred license).
